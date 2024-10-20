@@ -1,5 +1,6 @@
 package ru.itmo.service;
 
+import ru.itmo.config.DataSourceProvider;
 import ru.itmo.model.Car;
 
 import javax.jws.WebService;
@@ -26,7 +27,7 @@ public class CarServiceImpl implements CarService {
             InitialContext ctx = new InitialContext();
             dataSource = (DataSource) ctx.lookup("java:comp/env/jdbc/StudsDB");
         } catch (NamingException e) {
-            throw new RuntimeException(e);
+            dataSource = DataSourceProvider.getDataSource();
         }
 
         List<Car> results = new ArrayList<>();

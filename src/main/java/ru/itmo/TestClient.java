@@ -7,6 +7,7 @@ import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
 import java.net.URL;
 import java.util.List;
+import java.util.Scanner;
 
 public class TestClient {
     public static void main(String[] args) throws Exception {
@@ -16,12 +17,43 @@ public class TestClient {
 
         CarService carService = service.getPort(CarService.class);
 
-        List<Car> cars = carService.searchCars(1L, null, null, null, null);
+        Scanner scanner = new Scanner(System.in);
 
-        if (cars != null) {
-            System.out.println("Cars founded: " + cars);
-        } else {
-            System.out.println("Cars not found");
+        while (true) {
+            System.out.print("id: ");
+            String idInput = scanner.nextLine();
+
+            Long id = idInput.isEmpty() ? null : Long.parseLong(idInput);
+
+            System.out.print("name: ");
+            String name = scanner.nextLine();
+
+            if (name.isEmpty()) {
+                name = null;
+            }
+
+            System.out.print("price: ");
+            String priceInput = scanner.nextLine();
+
+            Integer price = priceInput.isEmpty() ? null : Integer.parseInt(priceInput);
+
+            System.out.print("count: ");
+            String countInput = scanner.nextLine();
+
+            Integer count = countInput.isEmpty() ? null : Integer.parseInt(countInput);
+
+            System.out.print("power: ");
+            String powerInput = scanner.nextLine();
+
+            Integer power = powerInput.isEmpty() ? null : Integer.parseInt(powerInput);
+
+            List<Car> cars = carService.searchCars(id, name, price, count, power);
+
+            if (cars.isEmpty()) {
+                System.out.println("nothing found");
+            } else {
+                cars.forEach(System.out::println);
+            }
         }
     }
 }
