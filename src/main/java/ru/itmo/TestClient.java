@@ -2,6 +2,7 @@ package ru.itmo;
 
 import ru.itmo.model.Car;
 import ru.itmo.service.CarService;
+import ru.itmo.service.status.OperationStatus;
 
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
@@ -20,40 +21,116 @@ public class TestClient {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            System.out.print("id: ");
-            String idInput = scanner.nextLine();
+            System.out.println("Выберите операцию:");
+            System.out.println("1. Поиск автомобилей");
+            System.out.println("2. Создать автомобиль");
+            System.out.println("3. Обновить автомобиль");
+            System.out.println("4. Удалить автомобиль");
+            System.out.println("5. Выход");
+            System.out.print("> ");
+            String choice = scanner.nextLine();
 
-            Long id = idInput.isEmpty() ? null : Long.parseLong(idInput);
+            switch (choice) {
+                case "1":
+                    Long id = inputId(scanner);
+                    CarParameters params = inputCarParameters(scanner);
 
-            System.out.print("name: ");
-            String name = scanner.nextLine();
+                    List<Car> cars = carService.searchCars(id, params.name, params.price, params.count, params.power);
 
-            if (name.isEmpty()) {
-                name = null;
+                    if (cars.isEmpty()) {
+                        System.out.println("Ничего не найдено");
+                    } else {
+                        cars.forEach(System.out::println);
+                    }
+                    break;
+
+                case "2":
+                    CarParameters newCarParams = inputCarParameters(scanner);
+                    Long newId = carService.createCar(newCarParams.name,
+                            newCarParams.price,
+                            newCarParams.count,
+                            newCarParams.power);
+                    System.out.println("Создан автомобиль с id: " + newId);
+                    break;
+
+                case "3":
+                    Long updateId = inputId(scanner);
+                    CarParameters updateParams = inputCarParameters(scanner);
+
+                    OperationStatus updateStatus = carService.updateCar(updateId,
+                            updateParams.name,
+                            updateParams.price,
+                            updateParams.count,
+                            updateParams.power);
+                    if (OperationStatus.SUCCESS.equals(updateStatus)) {
+                        System.out.println("Автомобиль успешно обновлен");
+                    } else {
+                        System.out.println("Ошибка при обновлении автомобиля");
+                    }
+                    break;
+
+                case "4":
+                    Long deleteId = inputId(scanner);
+                    OperationStatus deleteStatus = carService.deleteCar(deleteId);
+
+                    if (OperationStatus.SUCCESS.equals(deleteStatus)) {
+                        System.out.println("Автомобиль успешно удален");
+                    } else {
+                        System.out.println("Ошибка при удалении автомобиля");
+                    }
+                    break;
+
+                case "5":
+                    System.out.println("Выход из программы");
+                    System.exit(0);
+                    break;
+
+                default:
+                    System.out.println("Некорректный выбор. Попробуйте снова.");
+                    break;
             }
+        }
+    }
 
-            System.out.print("price: ");
-            String priceInput = scanner.nextLine();
+    private static Long inputId(Scanner scanner) {
+        System.out.print("id: ");
+        String idInput = scanner.nextLine();
+        return idInput.isEmpty() ? null : Long.parseLong(idInput);
+    }
 
-            Integer price = priceInput.isEmpty() ? null : Integer.parseInt(priceInput);
+    private static CarParameters inputCarParameters(Scanner scanner) {
+        System.out.print("name: ");
+        String name = scanner.nextLine();
+        if (name.isEmpty()) {
+            name = null;
+        }
 
-            System.out.print("count: ");
-            String countInput = scanner.nextLine();
+        System.out.print("price: ");
+        String priceInput = scanner.nextLine();
+        Integer price = priceInput.isEmpty() ? null : Integer.parseInt(priceInput);
 
-            Integer count = countInput.isEmpty() ? null : Integer.parseInt(countInput);
+        System.out.print("count: ");
+        String countInput = scanner.nextLine();
+        Integer count = countInput.isEmpty() ? null : Integer.parseInt(countInput);
 
-            System.out.print("power: ");
-            String powerInput = scanner.nextLine();
+        System.out.print("power: ");
+        String powerInput = scanner.nextLine();
+        Integer power = powerInput.isEmpty() ? null : Integer.parseInt(powerInput);
 
-            Integer power = powerInput.isEmpty() ? null : Integer.parseInt(powerInput);
+        return new CarParameters(name, price, count, power);
+    }
 
-            List<Car> cars = carService.searchCars(id, name, price, count, power);
+    private static class CarParameters {
+        String name;
+        Integer price;
+        Integer count;
+        Integer power;
 
-            if (cars.isEmpty()) {
-                System.out.println("nothing found");
-            } else {
-                cars.forEach(System.out::println);
-            }
+        CarParameters(String name, Integer price, Integer count, Integer power) {
+            this.name = name;
+            this.price = price;
+            this.count = count;
+            this.power = power;
         }
     }
 }

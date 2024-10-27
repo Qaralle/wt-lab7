@@ -1,93 +1,55 @@
 package ru.itmo.service;
 
-import ru.itmo.config.DataSourceProvider;
 import ru.itmo.model.Car;
+import ru.itmo.model.dao.CarDao;
+import ru.itmo.model.dao.CarRepository;
+import ru.itmo.service.status.OperationStatus;
 
 import javax.jws.WebService;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @WebService(serviceName = "CarService",
         endpointInterface = "ru.itmo.service.CarService",
         targetNamespace = "http://service.itmo.ru/")
 public class CarServiceImpl implements CarService {
+    private final CarDao carRepository;
+
+    public CarServiceImpl() {
+        this.carRepository = new CarRepository();
+    }
 
     @Override
     public List<Car> searchCars(Long id, String name, Integer price, Integer count, Integer power)  {
-        DataSource dataSource;
+        return carRepository.findCars(id, name, price, count, power);
+    }
 
-        try {
-            InitialContext ctx = new InitialContext();
-            dataSource = (DataSource) ctx.lookup("java:comp/env/jdbc/StudsDB");
-        } catch (NamingException e) {
-            dataSource = DataSourceProvider.getDataSource();
-        }
+    @Override
+    public OperationStatus updateCar(Long id, String name, Integer price, Integer count, Integer power) {
+        Car car = new Car();
 
-        List<Car> results = new ArrayList<>();
+        car.setId(id);
+        car.setName(name);
+        car.setPrice(price);
+        car.setCount(count);
+        car.setPower(power);
 
-        StringBuilder sql = new StringBuilder("SELECT * FROM cars WHERE 1=1");
-        List<Object> parameters = new ArrayList<>();
+        return carRepository.updateCar(car) == 0 ? OperationStatus.NOT_FOUND : OperationStatus.SUCCESS;
+    }
 
-        Optional<Long> optionalId = Optional.ofNullable(id);
-        Optional<String> optionalName = Optional.ofNullable(name);
-        Optional<Integer> optionalPrice = Optional.ofNullable(price);
-        Optional<Integer> optionalCount = Optional.ofNullable(count);
-        Optional<Integer> optionalPower = Optional.ofNullable(power);
+    @Override
+    public OperationStatus deleteCar(Long id) {
+        return carRepository.deleteCarById(id) == 0 ? OperationStatus.NOT_FOUND : OperationStatus.SUCCESS;
+    }
 
-        optionalId.ifPresent(value -> {
-            sql.append(" AND id = ?");
-            parameters.add(value);
-        });
+    @Override
+    public Long createCar(String name, Integer price, Integer count, Integer power) {
+        Car car = new Car();
 
-        optionalName.ifPresent(value -> {
-            sql.append(" AND name ILIKE ?");
-            parameters.add(value);
-        });
+        car.setName(name);
+        car.setPrice(price);
+        car.setCount(count);
+        car.setPower(power);
 
-        optionalPrice.ifPresent(value -> {
-            sql.append(" AND price = ?");
-            parameters.add(value);
-        });
-
-        optionalCount.ifPresent(value -> {
-            sql.append(" AND count = ?");
-            parameters.add(value);
-        });
-
-        optionalPower.ifPresent(value -> {
-            sql.append(" AND power = ?");
-            parameters.add(value);
-        });
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql.toString())) {
-
-            for (int i = 0; i < parameters.size(); i++) {
-                preparedStatement.setObject(i + 1, parameters.get(i));
-            }
-
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            while (resultSet.next()) {
-                Car car = new Car();
-                car.setId(resultSet.getLong("id"));
-                car.setName(resultSet.getString("name"));
-                car.setPrice(resultSet.getInt("price"));
-                car.setCount(resultSet.getInt("count"));
-                car.setPower(resultSet.getInt("power"));
-                results.add(car);
-            }
-        } catch (Exception e) {
-            System.err.println("Exception in searchCars: " + e.getMessage());
-        }
-
-        return results;
+        return carRepository.saveCar(car);
     }
 }
