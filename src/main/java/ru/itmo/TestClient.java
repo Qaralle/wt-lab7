@@ -2,6 +2,8 @@ package ru.itmo;
 
 import ru.itmo.model.Car;
 import ru.itmo.service.CarService;
+import ru.itmo.service.exception.ArgumentException;
+import ru.itmo.service.exception.DataException;
 import ru.itmo.service.status.OperationStatus;
 
 import javax.xml.namespace.QName;
@@ -12,7 +14,7 @@ import java.util.Scanner;
 
 public class TestClient {
     public static void main(String[] args) throws Exception {
-        URL wsdlURL = new URL("http://localhost:8081/labs/ws/CarService?wsdl");
+        URL wsdlURL = new URL("http://localhost:8083/labs/ws/CarService?wsdl");
         QName qname = new QName("http://service.itmo.ru/", "CarService");
         Service service = Service.create(wsdlURL, qname);
 
@@ -35,49 +37,87 @@ public class TestClient {
                     Long id = inputId(scanner);
                     CarParameters params = inputCarParameters(scanner);
 
-                    List<Car> cars = carService.searchCars(id, params.name, params.price, params.count, params.power);
+                    try {
+                        List<Car> cars = carService.searchCars(id, params.name, params.price, params.count, params.power);
 
-                    if (cars.isEmpty()) {
-                        System.out.println("Ничего не найдено");
-                    } else {
-                        cars.forEach(System.out::println);
+                        if (cars.isEmpty()) {
+                            System.out.println("Ничего не найдено");
+                        } else {
+                            cars.forEach(System.out::println);
+                        }
+                    } catch (ArgumentException argumentException) {
+                        System.out.println("Ошибка входных параметров: "
+                                + argumentException.getFaultInfo().getArgumentName()
+                                + ":"
+                                + argumentException.getFaultInfo().getMessage());
                     }
+
                     break;
 
                 case "2":
                     CarParameters newCarParams = inputCarParameters(scanner);
-                    Long newId = carService.createCar(newCarParams.name,
-                            newCarParams.price,
-                            newCarParams.count,
-                            newCarParams.power);
-                    System.out.println("Создан автомобиль с id: " + newId);
+
+                    try {
+                        Long newId = carService.createCar(newCarParams.name,
+                                newCarParams.price,
+                                newCarParams.count,
+                                newCarParams.power);
+
+                        System.out.println("Создан автомобиль с id: " + newId);
+                    } catch (ArgumentException argumentException) {
+                        System.out.println("Ошибка входных параметров: "
+                                + argumentException.getFaultInfo().getArgumentName()
+                                + ":"
+                                + argumentException.getFaultInfo().getMessage());
+                    }
+
                     break;
 
                 case "3":
                     Long updateId = inputId(scanner);
                     CarParameters updateParams = inputCarParameters(scanner);
 
-                    OperationStatus updateStatus = carService.updateCar(updateId,
-                            updateParams.name,
-                            updateParams.price,
-                            updateParams.count,
-                            updateParams.power);
-                    if (OperationStatus.SUCCESS.equals(updateStatus)) {
+                    try {
+                        carService.updateCar(updateId,
+                                updateParams.name,
+                                updateParams.price,
+                                updateParams.count,
+                                updateParams.power);
+
                         System.out.println("Автомобиль успешно обновлен");
-                    } else {
-                        System.out.println("Ошибка при обновлении автомобиля");
+                    } catch (ArgumentException argumentException) {
+                        System.out.println("Ошибка входных параметров: "
+                                + argumentException.getFaultInfo().getArgumentName()
+                                + ":"
+                                + argumentException.getMessage());
+                    } catch (DataException dataException) {
+                        System.out.println("Ошибка данных: "
+                                + dataException.getFaultInfo().getEntityId()
+                                + ":"
+                                + dataException.getMessage());
                     }
+
                     break;
 
                 case "4":
                     Long deleteId = inputId(scanner);
-                    OperationStatus deleteStatus = carService.deleteCar(deleteId);
 
-                    if (OperationStatus.SUCCESS.equals(deleteStatus)) {
+                    try {
+                        carService.deleteCar(deleteId);
+
                         System.out.println("Автомобиль успешно удален");
-                    } else {
-                        System.out.println("Ошибка при удалении автомобиля");
+                    } catch (ArgumentException argumentException) {
+                        System.out.println("Ошибка входных параметров: "
+                                + argumentException.getFaultInfo().getArgumentName()
+                                + ":"
+                                + argumentException.getMessage());
+                    } catch (DataException dataException) {
+                        System.out.println("Ошибка данных: "
+                                + dataException.getFaultInfo().getEntityId()
+                                + ":"
+                                + dataException.getMessage());
                     }
+
                     break;
 
                 case "5":
