@@ -28,7 +28,7 @@ public class CarValidator {
     }
 
     private static  void validateName(String name) throws ArgumentException {
-        if (name.isBlank()) {
+        if (name.isEmpty()) {
             throw new ArgumentException("name", "must not be empty");
         }
     }
